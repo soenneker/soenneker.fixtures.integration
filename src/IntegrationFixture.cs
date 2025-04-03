@@ -29,20 +29,16 @@ public class IntegrationFixture : IIntegrationFixture
     public Dictionary<Type, object> Factories { get; private set; } = null!;
 
     public Faker Faker { get; private set; } = null!;
+
     public AutoFaker AutoFaker { get; private set; } = null!;
 
-    private readonly AutoFakerConfig? _autoFakerConfig;
-
-    public IntegrationFixture(AutoFakerConfig? autoFakerConfig = null)
-    {
-        _autoFakerConfig = autoFakerConfig;
-    }
+    public AutoFakerConfig? AutoFakerConfig { get; set; }
 
     public ValueTask InitializeAsync()
     {
         Factories = [];
 
-        AutoFakerConfig config = _autoFakerConfig ?? new AutoFakerConfig();
+        AutoFakerConfig config = AutoFakerConfig ?? new AutoFakerConfig();
         AutoFaker = new AutoFaker(config);
         Faker = AutoFaker.Faker;
 
