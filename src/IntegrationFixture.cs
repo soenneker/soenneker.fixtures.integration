@@ -26,7 +26,7 @@ namespace Soenneker.Fixtures.Integration;
 ///<inheritdoc cref="IIntegrationFixture"/>
 public class IntegrationFixture : IIntegrationFixture
 {
-    public Dictionary<Type, object> Factories { get; private set; } = null!;
+    public Dictionary<Type, object> Factories { get; }
 
     public Faker Faker { get; private set; } = null!;
 
@@ -34,10 +34,13 @@ public class IntegrationFixture : IIntegrationFixture
 
     public AutoFakerConfig? AutoFakerConfig { get; set; }
 
+    public IntegrationFixture()
+    {
+        Factories = new Dictionary<Type, object>();
+    }
+
     public ValueTask InitializeAsync()
     {
-        Factories = [];
-
         AutoFakerConfig config = AutoFakerConfig ?? new AutoFakerConfig();
         AutoFaker = new AutoFaker(config);
         Faker = AutoFaker.Faker;
