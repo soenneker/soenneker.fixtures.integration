@@ -50,7 +50,7 @@
         <PackageReference Include="Soenneker.Enums.DeployEnvironment" Version="3.0.168" />
         <PackageReference Include="Soenneker.StartupFilters.IntegrationTests" Version="3.0.4" />
         <PackageReference Include="Soenneker.Utils.AutoBogus" Version="3.0.721" />
-        <PackageReference Include="Soenneker.Utils.Jwt" Version="3.0.1166" />
+        <PackageReference Include="Soenneker.Utils.Jwt" Version="3.0.1167" />
         <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="3.0.8" />
     </ItemGroup>
 </Project>
