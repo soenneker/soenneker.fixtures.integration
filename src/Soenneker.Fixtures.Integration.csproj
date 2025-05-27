@@ -51,6 +51,6 @@
         <PackageReference Include="Soenneker.StartupFilters.IntegrationTests" Version="3.0.62" />
         <PackageReference Include="Soenneker.Utils.AutoBogus" Version="3.0.772" />
         <PackageReference Include="Soenneker.Utils.Jwt" Version="3.0.1224" />
-        <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="3.0.93" />
+        <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="3.0.94" />
     </ItemGroup>
 </Project>
