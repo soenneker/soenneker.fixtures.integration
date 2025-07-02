@@ -20,11 +20,12 @@ using System.Threading.Tasks;
 using Serilog.Sinks.XUnit.Injectable.Extensions;
 using Soenneker.Fixtures.Integration.Abstract;
 using Soenneker.StartupFilters.IntegrationTests.Registrars;
+using Soenneker.Extensions.ValueTask;
 
 namespace Soenneker.Fixtures.Integration;
 
 ///<inheritdoc cref="IIntegrationFixture"/>
-public class IntegrationFixture : IIntegrationFixture
+public sealed class IntegrationFixture : IIntegrationFixture
 {
     public Dictionary<Type, object> Factories { get; }
 
@@ -121,13 +122,11 @@ public class IntegrationFixture : IIntegrationFixture
 
     public async ValueTask DisposeAsync()
     {
-        GC.SuppressFinalize(this);
-
         foreach (object factoryObj in Factories.Values)
         {
-            if (factoryObj is Lazy<IAsyncDisposable> lazy && lazy.IsValueCreated)
+            if (factoryObj is Lazy<IAsyncDisposable> {IsValueCreated: true} lazy)
             {
-                await lazy.Value.DisposeAsync();
+                await lazy.Value.DisposeAsync().NoSync();
             }
         }
     }
