@@ -25,7 +25,8 @@ using Soenneker.Extensions.ValueTask;
 namespace Soenneker.Fixtures.Integration;
 
 ///<inheritdoc cref="IIntegrationFixture"/>
-public sealed class IntegrationFixture : IIntegrationFixture
+// Cannot be sealed
+public class IntegrationFixture : IIntegrationFixture
 {
     public Dictionary<Type, object> Factories { get; }
 
