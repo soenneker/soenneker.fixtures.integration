@@ -45,7 +45,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.9" />
         <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
-        <PackageReference Include="Serilog.Sinks.XUnit.Injectable" Version="4.0.139" />
+        <PackageReference Include="Serilog.Sinks.XUnit.Injectable" Version="4.0.140" />
         <PackageReference Include="Soenneker.Enums.DeployEnvironment" Version="3.0.180" />
         <PackageReference Include="Soenneker.StartupFilters.IntegrationTests" Version="3.0.76" />
         <PackageReference Include="Soenneker.Utils.AutoBogus" Version="3.0.804" />
