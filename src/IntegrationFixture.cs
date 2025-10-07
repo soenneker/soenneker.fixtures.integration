@@ -34,8 +34,6 @@ public class IntegrationFixture : IIntegrationFixture
     public AutoFaker AutoFaker { get; private set; } = null!;
     public AutoFakerConfig? AutoFakerConfig { get; set; }
 
-    private InjectableTestOutputSink? _injectableTestOutputSink;
-
     public ValueTask InitializeAsync()
     {
         AutoFakerConfig config = AutoFakerConfig ?? new AutoFakerConfig();
@@ -63,11 +61,8 @@ public class IntegrationFixture : IIntegrationFixture
         throw new InvalidOperationException($"Factory for type {typeof(TStartup).Name} has not been registered.");
     }
 
-    private WebApplicationFactory<T> BuildFactory<T>(WebApplicationFactory<T> factory, string projectName) where T : class
+    private static WebApplicationFactory<T> BuildFactory<T>(WebApplicationFactory<T> factory, string projectName) where T : class
     {
-        // Create the sink once (per fixture) if it's not there yet
-        _injectableTestOutputSink ??= new InjectableTestOutputSink();
-
         return factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureAppConfiguration((_, configBuilder) =>
@@ -87,13 +82,15 @@ public class IntegrationFixture : IIntegrationFixture
 
             builder.ConfigureServices(services =>
             {
+                var injectableTestOutputSink = new InjectableTestOutputSink();
+
                 // Register the single fixture-scoped sink
-                services.AddSingleton<IInjectableTestOutputSink>(_injectableTestOutputSink);
+                services.AddSingleton<IInjectableTestOutputSink>(injectableTestOutputSink);
 
                 services.AddSerilog((_, loggerConfiguration) =>
                 {
                     loggerConfiguration.MinimumLevel.Verbose()
-                        .WriteTo.Async(a => a.InjectableTestOutput(_injectableTestOutputSink)) // async wrapper OK
+                        .WriteTo.Async(a => a.InjectableTestOutput(injectableTestOutputSink)) // async wrapper OK
                         .Enrich.FromLogContext();
                 });
             });
@@ -135,13 +132,6 @@ public class IntegrationFixture : IIntegrationFixture
                         break;
                 }
             }
-        }
-
-        if (_injectableTestOutputSink is not null)
-        {
-            await _injectableTestOutputSink.DisposeAsync()
-                .NoSync();
-            _injectableTestOutputSink = null;
         }
 
         await Log.CloseAndFlushAsync()
