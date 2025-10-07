@@ -82,15 +82,14 @@ public class IntegrationFixture : IIntegrationFixture
 
             builder.ConfigureServices(services =>
             {
-                var injectableTestOutputSink = new InjectableTestOutputSink();
+                services.AddSingleton<IInjectableTestOutputSink, InjectableTestOutputSink>(); // Now when the factory is disposed this will be too
 
-                // Register the single fixture-scoped sink
-                services.AddSingleton<IInjectableTestOutputSink>(injectableTestOutputSink);
-
-                services.AddSerilog((_, loggerConfiguration) =>
+                services.AddSerilog((sp, loggerConfiguration) =>
                 {
+                    var sink = sp.GetRequiredService<IInjectableTestOutputSink>();
+
                     loggerConfiguration.MinimumLevel.Verbose()
-                        .WriteTo.Async(a => a.InjectableTestOutput(injectableTestOutputSink)) // async wrapper OK
+                        .WriteTo.Async(a => a.InjectableTestOutput(sink)) // async wrapper OK
                         .Enrich.FromLogContext();
                 });
             });
