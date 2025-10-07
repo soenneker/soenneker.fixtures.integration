@@ -146,5 +146,7 @@ public class IntegrationFixture : IIntegrationFixture
 
         await Log.CloseAndFlushAsync()
             .NoSync();
+
+        Log.Logger = Serilog.Core.Logger.None;
     }
 }
