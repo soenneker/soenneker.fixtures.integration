@@ -24,29 +24,23 @@ using Soenneker.Extensions.ValueTask;
 
 namespace Soenneker.Fixtures.Integration;
 
-///<inheritdoc cref="IIntegrationFixture"/>
 // Cannot be sealed
+///<inheritdoc cref="IIntegrationFixture"/>
 public class IntegrationFixture : IIntegrationFixture
 {
-    public Dictionary<Type, object> Factories { get; }
+    public Dictionary<Type, object> Factories { get; } = new();
 
     public Faker Faker { get; private set; } = null!;
-
     public AutoFaker AutoFaker { get; private set; } = null!;
-
     public AutoFakerConfig? AutoFakerConfig { get; set; }
 
-    public IntegrationFixture()
-    {
-        Factories = new Dictionary<Type, object>();
-    }
+    private InjectableTestOutputSink? _injectableTestOutputSink;
 
     public ValueTask InitializeAsync()
     {
         AutoFakerConfig config = AutoFakerConfig ?? new AutoFakerConfig();
         AutoFaker = new AutoFaker(config);
         Faker = AutoFaker.Faker;
-
         return ValueTask.CompletedTask;
     }
 
@@ -56,7 +50,7 @@ public class IntegrationFixture : IIntegrationFixture
         {
             var baseFactory = new WebApplicationFactory<TStartup>();
             return BuildFactory(baseFactory, projectName);
-        }, true);
+        }, isThreadSafe: true);
 
         Factories[typeof(TStartup)] = factory;
     }
@@ -69,8 +63,11 @@ public class IntegrationFixture : IIntegrationFixture
         throw new InvalidOperationException($"Factory for type {typeof(TStartup).Name} has not been registered.");
     }
 
-    private static WebApplicationFactory<T> BuildFactory<T>(WebApplicationFactory<T> factory, string projectName) where T : class
+    private WebApplicationFactory<T> BuildFactory<T>(WebApplicationFactory<T> factory, string projectName) where T : class
     {
+        // Create the sink once (per fixture) if it's not there yet
+        _injectableTestOutputSink ??= new InjectableTestOutputSink();
+
         return factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureAppConfiguration((_, configBuilder) =>
@@ -88,17 +85,16 @@ public class IntegrationFixture : IIntegrationFixture
                     .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(DeployEnvironment.Test.Name, _ => { });
             });
 
-            var injectableTestOutputSink = new InjectableTestOutputSink();
-
             builder.ConfigureServices(services =>
             {
-                services.AddSingleton<IInjectableTestOutputSink>(injectableTestOutputSink);
+                // Register the single fixture-scoped sink
+                services.AddSingleton<IInjectableTestOutputSink>(_injectableTestOutputSink);
 
                 services.AddSerilog((_, loggerConfiguration) =>
                 {
-                    loggerConfiguration.MinimumLevel.Verbose();
-                    loggerConfiguration.WriteTo.Async(a => a.InjectableTestOutput(injectableTestOutputSink));
-                    loggerConfiguration.Enrich.FromLogContext();
+                    loggerConfiguration.MinimumLevel.Verbose()
+                        .WriteTo.Async(a => a.InjectableTestOutput(_injectableTestOutputSink)) // async wrapper OK
+                        .Enrich.FromLogContext();
                 });
             });
         });
@@ -107,7 +103,7 @@ public class IntegrationFixture : IIntegrationFixture
     public static string GetAppSettingsPath(string projectName)
     {
         string dllDir = Directory.GetCurrentDirectory();
-        DirectoryInfo info = new(dllDir);
+        var info = new DirectoryInfo(dllDir);
         var appSettingsDir = info.Parent?.ToString();
 
         if (appSettingsDir.IsNullOrEmpty())
@@ -123,12 +119,32 @@ public class IntegrationFixture : IIntegrationFixture
 
     public async ValueTask DisposeAsync()
     {
+        // Dispose all created factories (handle both async & sync)
         foreach (object factoryObj in Factories.Values)
         {
-            if (factoryObj is Lazy<IAsyncDisposable> {IsValueCreated: true} lazy)
+            if (factoryObj is Lazy<object> { IsValueCreated: true } lazy)
             {
-                await lazy.Value.DisposeAsync().NoSync();
+                switch (lazy.Value)
+                {
+                    case IAsyncDisposable asyncDisposable:
+                        await asyncDisposable.DisposeAsync()
+                            .NoSync();
+                        break;
+                    case IDisposable disposable:
+                        disposable.Dispose();
+                        break;
+                }
             }
         }
+
+        if (_injectableTestOutputSink is not null)
+        {
+            await _injectableTestOutputSink.DisposeAsync()
+                .NoSync();
+            _injectableTestOutputSink = null;
+        }
+
+        await Log.CloseAndFlushAsync()
+            .NoSync();
     }
 }
