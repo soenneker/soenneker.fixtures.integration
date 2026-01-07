@@ -4,23 +4,23 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using Serilog.Sinks.XUnit.Injectable;
 using Serilog.Sinks.XUnit.Injectable.Abstract;
+using Serilog.Sinks.XUnit.Injectable.Extensions;
 using Soenneker.Enums.DeployEnvironment;
-using Soenneker.Extensions.String;
+using Soenneker.Extensions.ValueTask;
+using Soenneker.Fixtures.Integration.Abstract;
+using Soenneker.StartupFilters.IntegrationTests.Registrars;
 using Soenneker.Utils.AutoBogus;
 using Soenneker.Utils.AutoBogus.Config;
 using Soenneker.Utils.Jwt.Registrars;
 using Soenneker.Utils.Test.AuthHandler;
 using System;
-using Serilog;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Serilog.Sinks.XUnit.Injectable.Extensions;
-using Soenneker.Fixtures.Integration.Abstract;
-using Soenneker.StartupFilters.IntegrationTests.Registrars;
-using Soenneker.Extensions.ValueTask;
 
 namespace Soenneker.Fixtures.Integration;
 
@@ -28,10 +28,15 @@ namespace Soenneker.Fixtures.Integration;
 ///<inheritdoc cref="IIntegrationFixture"/>
 public class IntegrationFixture : IIntegrationFixture
 {
-    public Dictionary<Type, object> Factories { get; } = new();
+    // Defensive cache; avoids duplicate FS checks if multiple factories resolve the same project.
+    private static readonly ConcurrentDictionary<string, string> _appSettingsPathCache = new(StringComparer.Ordinal);
+
+    private readonly Dictionary<Type, IFactoryHolder> _factories = new();
 
     public Faker Faker { get; private set; } = null!;
+
     public AutoFaker AutoFaker { get; private set; } = null!;
+
     public AutoFakerConfig? AutoFakerConfig { get; set; }
 
     public ValueTask InitializeAsync()
@@ -44,53 +49,61 @@ public class IntegrationFixture : IIntegrationFixture
 
     public void RegisterFactory<TStartup>(string projectName) where TStartup : class
     {
-        var factory = new Lazy<WebApplicationFactory<TStartup>>(() =>
-        {
-            var baseFactory = new WebApplicationFactory<TStartup>();
-            return BuildFactory(baseFactory, projectName);
-        }, isThreadSafe: true);
+        Type type = typeof(TStartup);
 
-        Factories[typeof(TStartup)] = factory;
+        // Avoid overwriting and silently leaking previous registrations
+        if (_factories.ContainsKey(type))
+            return;
+
+        _factories[type] = new FactoryHolder<TStartup>(projectName);
     }
 
     public Lazy<WebApplicationFactory<TStartup>> GetFactory<TStartup>() where TStartup : class
     {
-        if (Factories.TryGetValue(typeof(TStartup), out object? factory))
-            return (Lazy<WebApplicationFactory<TStartup>>)factory;
+        if (_factories.TryGetValue(typeof(TStartup), out IFactoryHolder? holder))
+            return ((FactoryHolder<TStartup>)holder).Factory;
 
         throw new InvalidOperationException($"Factory for type {typeof(TStartup).Name} has not been registered.");
     }
 
-    private static WebApplicationFactory<T> BuildFactory<T>(WebApplicationFactory<T> factory, string projectName) where T : class
+    internal static WebApplicationFactory<T> BuildFactory<T>(WebApplicationFactory<T> factory, string projectName) where T : class
     {
         return factory.WithWebHostBuilder(builder =>
         {
+            builder.ConfigureAppConfiguration(static (_, configBuilder) =>
+            {
+                // no-op here; we apply below with captured projectName in a single place
+            });
+
+            // This capture happens once per created factory (not per request), so it's fine.
             builder.ConfigureAppConfiguration((_, configBuilder) =>
             {
                 string appSettingsPath = GetAppSettingsPath(projectName);
-                configBuilder.AddJsonFile(appSettingsPath);
+                configBuilder.AddJsonFile(appSettingsPath, optional: false, reloadOnChange: false);
             });
 
-            builder.ConfigureTestServices(services =>
+            builder.ConfigureTestServices(static services =>
             {
                 services.AddJwtUtilAsScoped();
                 services.AddIntegrationTestsStartupFilterAsSingleton();
 
                 services.AddAuthentication(DeployEnvironment.Test.Name)
-                    .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(DeployEnvironment.Test.Name, _ => { });
+                        .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(DeployEnvironment.Test.Name, static _ =>
+                        {
+                        });
             });
 
-            builder.ConfigureServices(services =>
+            builder.ConfigureServices(static services =>
             {
-                services.AddSingleton<IInjectableTestOutputSink, InjectableTestOutputSink>(); // Now when the factory is disposed this will be too
+                services.AddSingleton<IInjectableTestOutputSink, InjectableTestOutputSink>();
 
-                services.AddSerilog((sp, loggerConfiguration) =>
+                services.AddSerilog(static (sp, loggerConfiguration) =>
                 {
                     var sink = sp.GetRequiredService<IInjectableTestOutputSink>();
 
                     loggerConfiguration.MinimumLevel.Verbose()
-                        .WriteTo.Async(a => a.InjectableTestOutput(sink)) // async wrapper OK
-                        .Enrich.FromLogContext();
+                                       .WriteTo.Async(a => a.InjectableTestOutput(sink))
+                                       .Enrich.FromLogContext();
                 });
             });
         });
@@ -98,39 +111,34 @@ public class IntegrationFixture : IIntegrationFixture
 
     public static string GetAppSettingsPath(string projectName)
     {
-        string dllDir = Directory.GetCurrentDirectory();
-        var info = new DirectoryInfo(dllDir);
-        var appSettingsDir = info.Parent?.ToString();
+        return _appSettingsPathCache.GetOrAdd(projectName, static pn =>
+        {
+            // Prefer BaseDirectory for test runs; Directory.GetCurrentDirectory() can vary by runner.
+            string baseDir = AppContext.BaseDirectory;
 
-        if (appSettingsDir.IsNullOrEmpty())
-            throw new Exception($"AppSettings path does not exist! {appSettingsDir}");
+            // baseDir is usually .../bin/{TFM}/
+            string? parent = Directory.GetParent(baseDir)
+                                      ?.FullName;
 
-        string baseAppSettings = Path.Combine(appSettingsDir, projectName, "appsettings.json");
+            if (string.IsNullOrWhiteSpace(parent))
+                throw new Exception($"AppSettings path does not exist! baseDir: {baseDir}");
 
-        if (!File.Exists(baseAppSettings))
-            throw new Exception($"appsettings.json file does not exist at {baseAppSettings}! dllDir: {dllDir}");
+            string path = Path.Combine(parent, pn, "appsettings.json");
 
-        return baseAppSettings;
+            if (!File.Exists(path))
+                throw new Exception($"appsettings.json file does not exist at {path}! baseDir: {baseDir}");
+
+            return path;
+        });
     }
 
     public async ValueTask DisposeAsync()
     {
-        // Dispose all created factories (handle both async & sync)
-        foreach (object factoryObj in Factories.Values)
+        // Dispose all *created* factories
+        foreach (IFactoryHolder holder in _factories.Values)
         {
-            if (factoryObj is Lazy<object> { IsValueCreated: true } lazy)
-            {
-                switch (lazy.Value)
-                {
-                    case IAsyncDisposable asyncDisposable:
-                        await asyncDisposable.DisposeAsync()
-                            .NoSync();
-                        break;
-                    case IDisposable disposable:
-                        disposable.Dispose();
-                        break;
-                }
-            }
+            await holder.DisposeIfCreatedAsync()
+                        .NoSync();
         }
     }
 }

@@ -14,11 +14,6 @@ namespace Soenneker.Fixtures.Integration.Abstract;
 public interface IIntegrationFixture : IAsyncLifetime
 {
     /// <summary>
-    /// A dictionary of registered <see cref="WebApplicationFactory{TStartup}"/> instances by startup type.
-    /// </summary>
-    Dictionary<Type, object> Factories { get; }
-
-    /// <summary>
     /// A configured instance of <see cref="Faker"/> for generating random data in tests.
     /// </summary>
     Faker Faker { get; }
