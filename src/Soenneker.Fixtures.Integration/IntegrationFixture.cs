@@ -138,7 +138,7 @@ public class IntegrationFixture : IIntegrationFixture
         // Dispose all *created* factories
         foreach (IFactoryHolder holder in _factories.Values)
         {
-            await holder.DisposeIfCreatedAsync()
+            await holder.DisposeIfCreated()
                         .NoSync();
         }
     }
