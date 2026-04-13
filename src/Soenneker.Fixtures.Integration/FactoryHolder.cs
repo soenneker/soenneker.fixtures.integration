@@ -5,6 +5,7 @@ using Soenneker.Fixtures.Integration.Abstract;
 
 namespace Soenneker.Fixtures.Integration;
 
+///<inheritdoc cref="IFactoryHolder"/>
 internal sealed class FactoryHolder<TStartup> : IFactoryHolder where TStartup : class
 {
     public Lazy<WebApplicationFactory<TStartup>> Factory { get; }
@@ -17,7 +18,7 @@ internal sealed class FactoryHolder<TStartup> : IFactoryHolder where TStartup : 
             isThreadSafe: true);
     }
 
-    public ValueTask DisposeIfCreatedAsync()
+    public ValueTask DisposeIfCreated()
     {
         if (!Factory.IsValueCreated)
             return ValueTask.CompletedTask;

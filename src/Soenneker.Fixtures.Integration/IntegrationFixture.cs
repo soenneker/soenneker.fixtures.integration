@@ -18,6 +18,7 @@ using Soenneker.Utils.Jwt.Registrars;
 using Soenneker.Utils.Test.AuthHandler;
 using System;
 using System.Collections.Concurrent;
+using Soenneker.Extensions.String;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -120,7 +121,7 @@ public class IntegrationFixture : IIntegrationFixture
             string? parent = Directory.GetParent(baseDir)
                                       ?.FullName;
 
-            if (string.IsNullOrWhiteSpace(parent))
+            if (parent.IsNullOrWhiteSpace())
                 throw new Exception($"AppSettings path does not exist! baseDir: {baseDir}");
 
             string path = Path.Combine(parent, pn, "appsettings.json");

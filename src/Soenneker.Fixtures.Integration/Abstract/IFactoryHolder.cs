@@ -4,5 +4,5 @@ namespace Soenneker.Fixtures.Integration.Abstract;
 
 internal interface IFactoryHolder
 {
-    ValueTask DisposeIfCreatedAsync();
+    ValueTask DisposeIfCreated();
 }
