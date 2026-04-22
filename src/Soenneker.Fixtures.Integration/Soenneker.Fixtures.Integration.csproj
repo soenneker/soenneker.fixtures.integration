@@ -44,13 +44,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.6" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.7" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
         <PackageReference Include="Serilog.Sinks.XUnit.Injectable" Version="4.0.217" />
         <PackageReference Include="Soenneker.Enums.DeployEnvironment" Version="4.0.214" />
         <PackageReference Include="Soenneker.StartupFilters.IntegrationTests" Version="4.0.102" />
         <PackageReference Include="Soenneker.Utils.AutoBogus" Version="4.0.889" />
-        <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="4.0.261" />
+        <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="4.0.262" />
     </ItemGroup>
 </Project>
