@@ -38,6 +38,9 @@ public class IntegrationFixture : IIntegrationFixture
 
     public AutoFaker AutoFaker { get; private set; } = null!;
 
+    /// <summary>
+    /// Gets or sets auto faker config.
+    /// </summary>
     public AutoFakerConfig? AutoFakerConfig { get; set; }
 
     public ValueTask InitializeAsync()
@@ -110,6 +113,11 @@ public class IntegrationFixture : IIntegrationFixture
         });
     }
 
+    /// <summary>
+    /// Gets app settings path.
+    /// </summary>
+    /// <param name="projectName">The project name.</param>
+    /// <returns>The result of the operation.</returns>
     public static string GetAppSettingsPath(string projectName)
     {
         return _appSettingsPathCache.GetOrAdd(projectName, static pn =>
@@ -133,6 +141,10 @@ public class IntegrationFixture : IIntegrationFixture
         });
     }
 
+    /// <summary>
+    /// Asynchronously releases resources used by the current instance.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async ValueTask DisposeAsync()
     {
         // Dispose all *created* factories
