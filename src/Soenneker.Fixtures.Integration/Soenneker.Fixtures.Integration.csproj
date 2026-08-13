@@ -50,7 +50,7 @@
         <PackageReference Include="Serilog.Sinks.XUnit.Injectable" Version="4.0.246" />
         <PackageReference Include="Soenneker.Enums.DeployEnvironment" Version="4.0.229" />
         <PackageReference Include="Soenneker.StartupFilters.IntegrationTests" Version="4.0.115" />
-        <PackageReference Include="Soenneker.Utils.AutoBogus" Version="4.0.925" />
+        <PackageReference Include="Soenneker.Utils.AutoBogus" Version="4.0.926" />
         <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="4.0.318" />
     </ItemGroup>
 </Project>
