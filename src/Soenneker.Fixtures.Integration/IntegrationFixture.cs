@@ -26,7 +26,7 @@ using System.Threading.Tasks;
 namespace Soenneker.Fixtures.Integration;
 
 // Cannot be sealed
-///<inheritdoc cref="IIntegrationFixture"/>
+/// <inheritdoc cref="IIntegrationFixture"/>
 public class IntegrationFixture : IIntegrationFixture
 {
     // Defensive cache; avoids duplicate FS checks if multiple factories resolve the same project.
