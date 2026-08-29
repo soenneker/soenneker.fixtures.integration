@@ -116,8 +116,8 @@ public class IntegrationFixture : IIntegrationFixture
     /// <summary>
     /// Gets app settings path.
     /// </summary>
-    /// <param name="projectName">The project name.</param>
-    /// <returns>The result of the operation.</returns>
+    /// <param name="projectName">Name of the project to target.</param>
+    /// <returns>The requested text.</returns>
     public static string GetAppSettingsPath(string projectName)
     {
         return _appSettingsPathCache.GetOrAdd(projectName, static pn =>
