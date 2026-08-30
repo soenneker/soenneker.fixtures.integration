@@ -26,13 +26,12 @@ using System.Threading.Tasks;
 namespace Soenneker.Fixtures.Integration;
 
 // Cannot be sealed
-/// <inheritdoc cref="IIntegrationFixture"/>
 public class IntegrationFixture : IIntegrationFixture
 {
     // Defensive cache; avoids duplicate FS checks if multiple factories resolve the same project.
-    private static readonly ConcurrentDictionary<string, string> _appSettingsPathCache = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<(string BaseDirectory, string ProjectName), string> _appSettingsPathCache = new();
 
-    private readonly Dictionary<Type, IFactoryHolder> _factories = new();
+    private readonly ConcurrentDictionary<Type, IFactoryHolder> _factories = new();
 
     public Faker Faker { get; private set; } = null!;
 
@@ -53,13 +52,7 @@ public class IntegrationFixture : IIntegrationFixture
 
     public void RegisterFactory<TStartup>(string projectName) where TStartup : class
     {
-        Type type = typeof(TStartup);
-
-        // Avoid overwriting and silently leaking previous registrations
-        if (_factories.ContainsKey(type))
-            return;
-
-        _factories[type] = new FactoryHolder<TStartup>(projectName);
+        _factories.GetOrAdd(typeof(TStartup), static (_, state) => new FactoryHolder<TStartup>(state), projectName);
     }
 
     public Lazy<WebApplicationFactory<TStartup>> GetFactory<TStartup>() where TStartup : class
@@ -74,12 +67,6 @@ public class IntegrationFixture : IIntegrationFixture
     {
         return factory.WithWebHostBuilder(builder =>
         {
-            builder.ConfigureAppConfiguration(static (_, configBuilder) =>
-            {
-                // no-op here; we apply below with captured projectName in a single place
-            });
-
-            // This capture happens once per created factory (not per request), so it's fine.
             builder.ConfigureAppConfiguration((_, configBuilder) =>
             {
                 string appSettingsPath = GetAppSettingsPath(projectName);
@@ -120,22 +107,26 @@ public class IntegrationFixture : IIntegrationFixture
     /// <returns>The requested text.</returns>
     public static string GetAppSettingsPath(string projectName)
     {
-        return _appSettingsPathCache.GetOrAdd(projectName, static pn =>
-        {
-            // Prefer BaseDirectory for test runs; Directory.GetCurrentDirectory() can vary by runner.
-            string baseDir = AppContext.BaseDirectory;
+        string baseDir = AppContext.BaseDirectory;
 
-            // baseDir is usually .../bin/{TFM}/
-            string? parent = Directory.GetParent(baseDir)
+        return _appSettingsPathCache.GetOrAdd((baseDir, projectName), static key =>
+        {
+            string? parent = Directory.GetParent(key.BaseDirectory)
                                       ?.FullName;
 
             if (parent.IsNullOrWhiteSpace())
-                throw new Exception($"AppSettings path does not exist! baseDir: {baseDir}");
+                throw new InvalidOperationException($"Cannot resolve the parent of test base directory '{key.BaseDirectory}'.");
 
-            string path = Path.Combine(parent, pn, "appsettings.json");
+            string root = Path.GetFullPath(parent);
+            string path = Path.GetFullPath(Path.Combine(root, key.ProjectName, "appsettings.json"));
+            string rootPrefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
+            StringComparison comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+            if (!path.StartsWith(rootPrefix, comparison))
+                throw new InvalidOperationException("The project name resolves outside the test output directory.");
 
             if (!File.Exists(path))
-                throw new Exception($"appsettings.json file does not exist at {path}! baseDir: {baseDir}");
+                throw new FileNotFoundException($"The integration-test appsettings file was not found at '{path}'.", path);
 
             return path;
         });
