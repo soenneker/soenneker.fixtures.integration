@@ -48,9 +48,9 @@
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
         <PackageReference Include="Serilog.Sinks.XUnit.Injectable" Version="4.0.256" />
-        <PackageReference Include="Soenneker.Enums.DeployEnvironment" Version="4.0.236" />
+        <PackageReference Include="Soenneker.Enums.DeployEnvironment" Version="4.0.237" />
         <PackageReference Include="Soenneker.StartupFilters.IntegrationTests" Version="4.0.122" />
         <PackageReference Include="Soenneker.Utils.AutoBogus" Version="4.0.949" />
-        <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="4.0.337" />
+        <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="4.0.338" />
     </ItemGroup>
 </Project>
