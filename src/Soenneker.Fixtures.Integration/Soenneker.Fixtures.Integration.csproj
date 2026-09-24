@@ -53,4 +53,7 @@
         <PackageReference Include="Soenneker.Utils.AutoBogus" Version="4.0.964" />
         <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="4.0.360" />
     </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Soenneker.Extensions.ValueTask" Version="4.0.123" />
+    </ItemGroup>
 </Project>
