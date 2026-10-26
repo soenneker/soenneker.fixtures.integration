@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework>net11.0</TargetFramework>
         <IsAotCompatible>true</IsAotCompatible>
         <Nullable>enable</Nullable>
         <Platforms>AnyCPU</Platforms>
@@ -9,7 +9,7 @@
 
     <PropertyGroup>
         <Description>Provides a reusable and generic integration test xunit fixture that dynamically registers and configures WebApplicationFactory instances for multiple ASP.NET Core projects with support for custom app settings, authentication, logging, and test utilities.</Description>
-        <Version Condition="'$(BUILD_VERSION)' == ''">4.0.0</Version>
+        <Version Condition="'$(BUILD_VERSION)' == ''">11.0.0</Version>
         <Version Condition="'$(BUILD_VERSION)' != ''">$(BUILD_VERSION)</Version>
         <AssemblyName>Soenneker.Fixtures.Integration</AssemblyName>
         <PackageId>Soenneker.Fixtures.Integration</PackageId>
@@ -45,13 +45,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.14" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0-rc.3.26522.148" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
         <PackageReference Include="Serilog.Sinks.XUnit.Injectable" Version="4.0.294" />
         <PackageReference Include="Soenneker.Enums.DeployEnvironment" Version="4.0.260" />
         <PackageReference Include="Soenneker.StartupFilters.IntegrationTests" Version="4.0.142" />
-        <PackageReference Include="Soenneker.Utils.AutoBogus" Version="4.0.990" />
+        <PackageReference Include="Soenneker.Utils.AutoBogus" Version="4.0.991" />
         <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="4.0.386" />
     </ItemGroup>
     <ItemGroup>
