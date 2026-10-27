@@ -53,7 +53,7 @@
         <PackageReference Include="Soenneker.Enums.DeployEnvironment" Version="11.0.262" />
         <PackageReference Include="Soenneker.StartupFilters.IntegrationTests" Version="11.0.148" />
         <PackageReference Include="Soenneker.Utils.AutoBogus" Version="11.0.996" />
-        <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="11.0.390" />
+        <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="11.0.391" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Soenneker.Extensions.ValueTask" Version="4.0.133" />
