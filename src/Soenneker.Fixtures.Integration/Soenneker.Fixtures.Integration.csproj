@@ -49,10 +49,10 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
-        <PackageReference Include="Serilog.Sinks.XUnit.Injectable" Version="11.0.303" />
+        <PackageReference Include="Serilog.Sinks.XUnit.Injectable" Version="11.0.304" />
         <PackageReference Include="Soenneker.Enums.DeployEnvironment" Version="11.0.264" />
         <PackageReference Include="Soenneker.StartupFilters.IntegrationTests" Version="11.0.151" />
-        <PackageReference Include="Soenneker.Utils.AutoBogus" Version="11.0.1008" />
+        <PackageReference Include="Soenneker.Utils.AutoBogus" Version="11.0.1010" />
         <PackageReference Include="Soenneker.Utils.Test.AuthHandler" Version="11.0.399" />
     </ItemGroup>
     <ItemGroup>
